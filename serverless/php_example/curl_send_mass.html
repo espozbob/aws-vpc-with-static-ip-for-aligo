@@ -1,0 +1,69 @@
+<?php
+/**************** 문자전송하기 예제 ******************/
+/* "result_code":결과코드,"message":결과문구, */
+/* "msg_id":메세지ID,"error_cnt":에러갯수,"success_cnt":성공갯수 */
+/* 각각 다른 개별 내용 > 동시 전송용 입니다.  
+/******************** 인증정보 ********************/
+$sms_url = "https://apis.aligo.in/send_mass/"; // 전송요청 URL
+$sms['user_id'] = ""; // SMS 아이디
+$sms['key'] = "";//인증키
+/******************** 인증정보 ********************/
+
+/******************** 전송정보 ********************/
+$sms['sender'] =""; // 발신번호
+$sms['rdate'] = ''; // 예약일자 - 20161004 : 2016-10-04일기준
+$sms['rtime'] = ''; // 예약시간 - 1930 : 오후 7시30분
+$sms['testmode_yn'] = 'Y'; // Y 인경우 실제문자 전송X , 자동취소(환불) 처리
+
+$sms['msg_type'] = 'SMS'; // SMS(단문) , LMS(장문), MMS(그림문자)  = 필수항목
+$msg = "(광고)알리고\n회원님 알리고를 추천드려요!!\n무료거부:080xxxxxxxxx"; // 메세지 내용
+for($i=1; $i < 501; $i++) {
+	$sms['rec_'.$i] = '01100000'.($i < 100 ? ($i < 10 ? '00'.$i : '0'.$i) : $i); // 수신번호_$i 번째  = 필수항목
+	$sms['msg_'.$i] = stripslashes(str_replace('회원님','회원'.$i.'님',$msg)); // 내용_$i번째  = 필수항목
+}
+$sms['cnt'] = $i-1; // 전송건수(지정된 건수까지만  처리) cnt = 10 설정 시 rec_11 과 msg_11 에 데이터가 있어도 rec_11에게  미전송  = 필수항목
+// $sms['title'] = '제목입력'; //  LMS, MMS 제목 (미입력시 본문중 44Byte 또는 엔터 구분자 첫라인)
+/*****/
+
+/*** ※ 중요 - 기존 send 와 다른 부분  ***
+ *  msg_type 추가 : SMS 와 LMS 구분자 = 필수항목
+ *  receiver(수신번호) 와 msg(내용) 가 rec_1 ~ rec_500 과 msg_1 ~ msg_500 으로 설정가능 = 필수입력(최소 1개이상)
+ * cnt 추가 : 위 rec_갯수 와 msg_갯수에 지정된 갯수정보 지정 = 필수항목 (최대 500개)
+/******/
+
+
+// $_POST['image'] = '/tmp/pic_57f358af08cf7_sms_.jpg'; // MMS 이미지 파일 위치
+/******************** 전송정보 ********************/
+// 이미지 전송시
+if(!empty($_POST['image'])) {
+	if(file_exists($_POST['image'])) {
+		$tmpFile = explode('/',$_POST['image']);
+		$str_filename = $tmpFile[sizeof($tmpFile)-1];
+		$tmp_filetype = 'image/jpeg';
+
+		if ((version_compare(PHP_VERSION, '5.5') >= 0)) {
+			$sms['image'] = new CURLFile($_POST['image'], $tmp_filetype, $str_filename);
+			curl_setopt($oCurl, CURLOPT_SAFE_UPLOAD, true);
+		} else {
+			$sms['image'] = '@'.$_POST['image'].';filename='.$str_filename. ';type='.$tmp_filetype;
+		}
+	}
+}
+/*****/
+
+$host_info = explode("/", $sms_url);
+$port = $host_info[0] == 'https:' ? 443 : 80;
+
+$oCurl = curl_init();
+curl_setopt($oCurl, CURLOPT_PORT, $port);
+curl_setopt($oCurl, CURLOPT_URL, $sms_url);
+curl_setopt($oCurl, CURLOPT_POST, 1);
+curl_setopt($oCurl, CURLOPT_RETURNTRANSFER, 1);
+curl_setopt($oCurl, CURLOPT_POSTFIELDS, $sms);
+curl_setopt($oCurl, CURLOPT_SSL_VERIFYPEER, FALSE);
+$ret = curl_exec($oCurl);
+curl_close($oCurl);
+
+echo $ret;
+$retArr = json_decode($ret); // 결과배열
+// print_r($retArr);
