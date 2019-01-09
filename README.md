@@ -27,7 +27,7 @@
 * 발송 서버 IP 등록
 
 ## 사용법
-
+* :film_strip: Youtube: https://youtu.be/Ot3qf2H0VNE
 * Terraform 부트스트랩 실행
 
 ```
